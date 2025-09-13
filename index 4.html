@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>CityGrow Mobile</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; margin: 10px; }
+  #resources { margin-bottom: 15px; font-size: 18px; }
+  button { margin: 5px; padding: 15px 25px; font-size: 16px; border-radius: 8px; cursor: pointer; }
+  #progress-container { width: 90%; height: 25px; background: #ddd; margin: 10px auto; border-radius: 12px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; background: #4caf50; transition: width 0.5s ease; }
+  #city { display: flex; overflow-x: auto; padding: 10px 0; margin-top: 15px; }
+  .house { flex: 0 0 auto; width: 50px; height: 50px; margin: 5px; border-radius: 5px; opacity: 0; transform: scale(0); transition: all 0.5s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px; }
+  .house.show { opacity: 1; transform: scale(1); }
+  .hut { background: #8B4513; }
+  .home { background: #4682B4; }
+  .mansion { background: #DAA520; }
+</style>
+</head>
+<body>
+
+<h1>CityGrow Mobile</h1>
+
+<div id="resources">
+  Монеты: <span id="coins">0</span><br>
+  Дома: <span id="houses">0</span><br>
+  Уровень деревни: <span id="level">0</span><br>
+  Доход/сек: <span id="income">0</span>
+</div>
+
+<div id="progress-container">
+  <div id="progress-bar"></div>
+</div>
+
+<div>
+  <button onclick="buildHouse('hut')">Хижина (<span id="hutCost">10</span>)</button>
+  <button onclick="buildHouse('home')">Дом (<span id="homeCost">50</span>)</button>
+  <button onclick="buildHouse('mansion')">Особняк (<span id="mansionCost">200</span>)</button>
+  <button onclick="upgradeVillage()">Улучшить деревню (<span id="upgradeCost">100</span>)</button>
+  <button onclick="collectCoins()">Собрать монеты</button>
+  <button onclick="toggleAutoUpgrade()">Авто-улучшение: <span id="autoStatus">Выкл</span></button>
+</div>
+
+<div id="city"></div>
+
+<audio id="buildSound" src="https://www.soundjay.com/misc/sounds/cash-register-01.mp3"></audio>
+<audio id="upgradeSound" src="https://www.soundjay.com/misc/sounds/bell-ringing-01.mp3"></audio>
+
+<script>
+let coins = 0;
+let houses = 0;
+let houseLevel = 0;
+let income = 0;
+let autoUpgrade = false;
+
+let costs = { hut: 10, home: 50, mansion: 200 };
+let incomes = { hut: 1, home: 5, mansion: 20 };
+let upgradeCost = 100;
+
+function updateDisplay() {
+  document.getElementById('coins').innerText = coins;
+  document.getElementById('houses').innerText = houses;
+  document.getElementById('level').innerText = houseLevel;
+  document.getElementById('income').innerText = income;
+  document.getElementById('hutCost').innerText = costs.hut;
+  document.getElementById('homeCost').innerText = costs.home;
+  document.getElementById('mansionCost').innerText = costs.mansion;
+  document.getElementById('upgradeCost').innerText = upgradeCost;
+
+  let progress = Math.min((houseLevel / 20) * 100, 100);
+  document.getElementById('progress-bar').style.width = progress + '%';
+}
+
+function buildHouse(type) {
+  if (coins >= costs[type]) {
+    coins -= costs[type];
+    houses += 1;
+    income += incomes[type];
+    costs[type] = Math.floor(costs[type] * 1.2);
+    updateDisplay();
+    showHouseAnimation(type);
+    document.getElementById('buildSound').play();
+  } else {
+    alert('Недостаточно монет для ' + type + '!');
+  }
+}
+
+function upgradeVillage() {
+  if (coins >= upgradeCost && houses > 0) {
+    coins -= upgradeCost;
+    houseLevel += 1;
+    income += houses;
+    upgradeCost = Math.floor(upgradeCost * 1.5);
+    updateDisplay();
+    document.getElementById('upgradeSound').play();
+  } else {
+    alert('Недостаточно монет или нет домов!');
+  }
+}
+
+function collectCoins() {
+  coins += income;
+  updateDisplay();
+}
+
+function showHouseAnimation(type) {
+  const house = document.createElement('div');
+  house.className = 'house ' + type;
+  house.innerText = type === 'hut' ? 'Х' : type === 'home' ? 'Д' : 'О';
+  document.getElementById('city').appendChild(house);
+  setTimeout(() => { house.classList.add('show'); }, 50);
+}
+
+function toggleAutoUpgrade() {
+  autoUpgrade = !autoUpgrade;
+  document.getElementById('autoStatus').innerText = autoUpgrade ? 'Вкл' : 'Выкл';
+}
+
+setInterval(() => {
+  coins += income;
+  updateDisplay();
+  if (autoUpgrade) {
+    while (coins >= upgradeCost && houses > 0) {
+      upgradeVillage();
+    }
+  }
+}, 1000);
+
+updateDisplay();
+</script>
+
+</body>
+</html>
